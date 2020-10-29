@@ -1,13 +1,31 @@
 
 # About the project
 
-*Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.*
+The course seems very interesting. I am struggling with all these new software tools that are new to me, i.e. *R studio*, *Git*. The *R* syntax seems logical and I suppose it is easy to adapt without struggling too much. *R Markdown* reminds me of *Jupyter Notebooks*. I hope to learn a lot about data science during the course. I expect to learn efficient ways of utilizing *R*, *R studio* and *R markdown* as well as version control with *Git*.  
+
+The link to my Github repository is <https://github.com/jtuure/IODS-project>
 
 ```{r}
 # This is a so-called "R chunk" where you can write R code.
 
 date()
 
-```
-The text continues here.
+a = 1:10
+b = 1:10*5
 
+plot(a,b)
+
+```
+
+## Some styling of text tried out down here
+The text continues here and I am trying different styles and stuff. <span style="color: red;">This is highlighted in red</span> <span style="color: blue;">and this in blue</span> This text is **bold** and this *italic*. 
+
+Here is a very simple list:
+
+1. Item 1
+2. Item 2
+3. Item 3
+    + Item 3a
+    + Item 3b
+
+by the way my Github repository can also be accessed from [here](https://github.com/jtuure/IODS-project)
