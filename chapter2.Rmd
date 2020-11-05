@@ -1,13 +1,79 @@
 # Insert chapter 2 title here
 
 *Describe the work you have done this week and summarize your learning.*
+I have learned about data wranling, i.e. how to load data from external source by using a given URL or data stored as .txt or .csv on the hardrive. Also, how to briefly inspect the data and rearrange it and calculate means of integer arrays. Further I have learned how to plot data to inspect it graphically. This I find very useful to quickly assess the dataset that everything is OK before conducting data analysis. Finally, I learned how to create linear regression models with single and multiple explanatory variables and how to graphically evaluate the model with three different types of plots, however,  I am a little bit unsure how to interpret the plots. The Datacamp - also touched how to predict values using the model and observations of the explanatory variable, I suppose this is called modelling. 
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
+
 
 ```{r}
-date()
+#Import libraries and set theme for plotting
+library(dplyr) 
+library(GGally)
+library(ggplot2) 
 ```
 
-Here we go again...
+
+In this R code chunk data is downloaded and structure and dimensions are inspected briefly:
+```{r}
+#Download data, with a comma separator between columns:
+lrn2014 <- read.table("http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/learning2014.txt", 
+                 sep = ",",
+                 header = TRUE
+                 )
+#Explore the structure of the data using str
+str(lrn2014)
+
+#Explore the dimensions of the data using dim 
+dim(lrn2014)
+```
+
+The data was downloaded from the given URL as I was not sure how to type the directory of the data, so that the code would work if someone downloaded it from Github and tried to run it. 
+
+
+The dataset considered here had originally N = 183 observations, but for this analysis the "points = 0" observations were excluded and the amount of observations was reduced to  N = 166. In this analysis 7 variables are considered: age, gender, attitude, deep, stra, surf and points.
+
+More details regarding the original data can be found from the  [metadata file](https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS3-meta.txt)
+
+In this R code chunk the data can be inspected graphically:
+```{r}
+
+p <- ggpairs(lrn2014, mapping = aes(col = gender, alpha = 0.3), lower = list(combo = wrap("facethist", bins = 20)))
+p
+
+```
+
+
+
+In this R code chunk a regression model with multiple explanatory variables is created:
+```{r}
+my_model <- lm(points ~ attitude + stra + surf, data = lrn2014)
+summary(my_model)
+```
+
+
+I noticed in the graphical analysis that the explanatory variables "surf" and "strat" had not statistically significant relationship with the target variable "point"(See the rightmost column in the matrix plot).The absolute correlation (Corr.) values were small (< 0.2) and the p-value that indicates statistic significance, should be p < 0.05. In the plots and the model summaries the significance level is portrayed with asterisks (*). I confirmed this with creating a regression model with multiple explanatory values and inspecting the statistical significance from the summary, revealing the same result; explanatory variables "surf" and "strat" had no statistically significant relationship with the target variable "point" regarding the intercept and the slope or beta-parameter (attitude in summary table). 
+
+
+Thus I removed these from the model fit, and run the model fit again with a single as follows in this R code chunk were also the summary for the model fit:
+```{r}
+my_model <- lm(points ~ attitude, data = lrn2014)
+summary(my_model) 
+```
+
+In this case with a single explanatory variable "attitude", the summary above reveals that a statistically significant relationship exists between the explanatory and the target variables.  for both the slope and the intercept.
+
+R-squared should accurately reflect the percentage of the dependent variable variation 
+
+Finally in this R code chunk the diagnostic plots Residual vs. Fitted values, Normal QQ-plot and Residual vs. Leverage are plotted:
+```{r}
+par(mfrow = c(2,2))
+plot(my_model, which = c(1,2,5))
+```
+
+From these three figures one can interpret following:
+
+The residuals vs. model values scatter plot (top left plot in the figure above) is a tool for assessing the constant variance assumption. According to the constant variance assumption the size of the model errors should not depend on the explanatory variables. There are is not a clear pattern or dependency between model fitted values and residuals  that would indicate problems with the constant variance assumption. 
+
+QQ-plot (top right plot in figure above) is a tool to analyze the normality assumption i.e. that the errors of the model are normally distributed. The points plotted, follow the line with some deviation at top and bottom values, errors may be considered as reasonably normally distributed   
+
+Leverage measures how much impact a single observation has on the model. Residuals vs. leverage plot (bottom left plot in figure above) is a tool for identifying which observations have unusually high impact. The Residuals vs. leverage plot reveals that there are no observations that have unusual impact on the model. Notice the small values on the x-axis (Leverage). 
