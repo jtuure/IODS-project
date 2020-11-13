@@ -1,0 +1,170 @@
+
+# Exercise 3. Logistic regression analysis
+
+
+
+```{r}
+#Import libraries
+library(dplyr) 
+library(ggplot2) 
+library(GGally)
+library(tidyr)
+```
+
+The dataset used in this exercise is available online: http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/alc.txt
+
+The dataset processed in this exercise is a combination of two original datasets on performance in two distinct subjects: Mathematics (mat) and Portuguese language (por). 
+
+The combined dataset used contains 35 variables (columns) and 382 observations (rows). The description of the variables  and more detailed description of the dataset can be found [here](https://archive.ics.uci.edu/ml/datasets/Student+Performance) 
+
+
+The first step is to download the data (this is already the combined dataset).
+```{r}
+#Download data, with a comma separator between columns:
+alc <- read.table("http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/alc.txt", 
+                 sep = ",",
+                 header = TRUE
+                 )
+```
+
+The next step is to print out the variable names (or column headers) of the data to check the variables 
+```{r}
+colnames(alc)
+```
+
+As the purpose of this analysis is to study the relationships between high/low alcohol consumption and some of the other variables in the data. i choose following _4 variables_ for the analysis:\  
+
+
+_freetime_ - free time after school (numeric: from 1 - very low to 5 - very high)\   
+_goout_ - going out with friends (numeric: from 1 - very low to 5 - very high)\   
+_health_ - current health status (numeric: from 1 - very bad to 5 - very good)\   
+_absences_ - number of school absences (numeric: from 0 to 93)\   
+
+My __personal hypothesis__ for the relationships of the chosen variables with alcohol consumption are\    
+_freetime_ - Alcohol consumption increases with increased freetime\  
+_goout_ - Alcohol consumption increases the more students go out with friends\    
+_health_ - Alcohol consumption increases with decreased health status\    
+_absences_ - Alcohol consumption increases with increased school absences\     
+
+Next the distributions of the variables are explored graphically and numerically:\    
+
+For simplicity a new dataset is defined with the 4 variables, the gender variable and alcohol use:
+```{r}
+
+#Acquire the variables from the original dataset 
+sex <- alc$sex
+freetime <- alc$freetime
+goout <- alc$goout
+health <- alc$health
+absences <- alc$absences
+alc_use <- alc$alc_use
+high_use <- alc$high_use
+
+alc2 <- data.frame(sex = sex, freetime = freetime, goout = goout, health = health,
+                   absences = absences, alc_use = alc_use, high_use = high_use)
+
+```
+
+
+Here we inspect the relationships between the variables graphically (and numerically) with this type of summarizing matrix plot.
+```{r}
+p <- ggpairs(alc2, mapping = aes(col = sex, alpha = 0.3), lower = list(combo = wrap("facethist", bins = 20)))
+p
+```
+
+
+
+The distributions are inspected graphically more closely with bar plots:
+```{r}
+#Draw bar plots of the distributions of the chosen variables 
+gather(alc2) %>% ggplot(aes(value))  + geom_bar() + facet_wrap("key", scales = "free")
+```
+
+The exploration (The first matrix plot) of the variables revealed that there are statistically significant relationships (p < 0.05) between alcohol consumption ("alc_use") and the variables _freetime_, _goout_ and _absences_. There is no statistically significant relationship between alcohol consumption and student health. The strongest correlation can be found between gouout and alcohol consumption.\   
+
+Compared to the hypotheses stated earlier the relationships were not as strong as I thought. There was however a predicted relationship between alcohol consumption and every other variable, but student _health_. Seems like alcohol consumption does not affect the health at younger ages...\   
+
+Regarding the distributions (graphically interpretation) of the variables, _goout_ and _freetime_ are somewhat normally distributed. While _absences_, _health_ and _alc_use_ have half-normal or gamma distributions.  
+
+
+Now logistic regression is used to statistically explore the relationship between the chosen variables and the binary high/low alcohol consumption as the target variable. 
+```{r}
+#find the model with glm()
+m <- glm(high_use ~ freetime + goout + health + absences + sex, data = alc2, family = "binomial")
+
+#print out the summary of the model 
+summary(m)
+
+
+# compute odds ratios (OR)
+OR <- coef(m) %>% exp
+
+# compute confidence intervals (CI)
+CI <- confint(m) %>% exp
+
+# print out the odds ratios with their confidence intervals
+cbind(OR, CI)
+```
+
+I did not really grasp how to _interpret the summary_ of the logistic regression model (m) with categorical values. Other than that there is a statistically strong relationship between heavy use of alcohol ("high_use") and the variables _goout_, _absences_ and _sexM_.
+
+Interpretation of the  coefficients of the model as odds ratios indicate that increased outgoing (goout) is twice (2 times) as likely to increase alcohol consumption than decreased going out. Similarly, male (sexM) students are twice as likely to be high users compared to female students.The other variables do not have a relationship with high consumption of alcohol ("high_use").These results are in contradiction to the hypotheses presented in the beginning of this exercise. 
+
+Next the variables that had a significant relationship i.e. _goout_, _absences_ and _sex_ will be used to explore the predictive power of the model:
+```{r}
+# A model with the variables with an existing significant realtionship are used 
+m =  glm(high_use ~  goout + absences + sex, data = alc2, family = "binomial")
+
+# Use the model (m) to predict() the probability of high_use
+probabilities <- predict(m, type = "response")
+
+# add the predicted probabilities to 'alc2'
+alc2 <- mutate(alc2, probability = probabilities)
+
+# use the probabilities to make a prediction of high_use
+alc2 <- mutate(alc2, prediction = probabilities >0.5)
+
+# Finally, tabulate the target variable versus the predictions
+table(high_use = alc2$high_use, prediction = alc2$prediction)
+
+# Plot the results 
+g <- ggplot(alc2, aes(x = probability, y = high_use, col = prediction))
+g + geom_point()
+
+# define a loss function (total prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  sum(n_wrong)
+}
+ #call loss_func to compute the total number of wrong predictions in the (training) data
+loss_func(class = alc2$high_use, prob = alc2$probability)
+
+```
+
+From the 2X2 Cross tabulation one can interpret that the non-high (FLASE) alcohol consumption was predicted by the model correctly for 255 students. High alcohol consumption (TRUE) was predicted correctly for 46 students.
+
+The loss function indicates that 81 predictions of 382 are wrong. The same result can be interpreted from the 2X2 Cross tabulation as the wrong predictions 66 + 15 = 81. I am not familiar with guessing strategies, but compared to a yes,no,yes,no,yes,no etc. guessing strategy the model _m_ is more accurate.  
+
+
+Here a 10-fold cross validation is performed on the model: 
+```{r}
+# define a loss function (average prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+  # compute the average number of wrong predictions in the (training) data
+loss_func(class = alc2$high_use, prob = alc2$probability)
+
+
+
+# 10-fold cross-validation
+library(boot)
+cv <- cv.glm(data = alc2, cost = loss_func, glmfit = m, 10)
+
+
+# display average number of wrong predictions in the cross validation
+cv$delta[1]
+```
+The average number of wrong predictions obtained with the cross validation for the introduced model m. is 0.204. It is somewhat smaller than the value introduced to the model introduced in DataCamp, which had about 0.26 error.

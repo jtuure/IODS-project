@@ -1,7 +1,7 @@
 
 # About the project
 
-The course seems very interesting. I am struggling with all these new software tools that are new to me, i.e. *R studio*, *Git*. The *R* syntax seems logical and I suppose it is easy to adapt without struggling too much. *R Markdown* reminds me of *Jupyter Notebooks*. I hope to learn a lot about data science during the course. I expect to learn efficient ways of utilizing *R*, *R studio* and *R markdown* as well as version control with *Git*.  
+Hi, I am Juuso, currently a PhD student at the department of agricultural sciences. I have no previous experience in *R*, but some programming experience from other languages. I have started to grow an interest in datascience and have also in my research gathered quite large datasets from field experiments and hence am here to find out how to deal with them.    
 
 The link to my Github repository is <https://github.com/jtuure/IODS-project>
 
