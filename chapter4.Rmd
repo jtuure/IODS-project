@@ -1,0 +1,233 @@
+# Exercise 4. Clustering and classification
+
+```{r}
+#Import libraries
+library(dplyr) 
+library(ggplot2) 
+library(GGally)
+library(tidyr)
+library(MASS)
+```
+
+
+
+## Loading the dataset and exploring the structure and dimensions of the dataset
+```{r}
+data("Boston")
+
+head(Boston)
+str(Boston)
+dim(Boston)
+summary(Boston)
+
+
+```
+
+
+The dataset "Boston" is on housing values in the suburbs of Boston.  
+
+The data has the following columns:
+crim -per capita crime rate by town.   
+zn - proportion of residential land zoned for lots over 25,000 sq.ft.    
+indus - proportion of non-retail business acres per town.    
+chas - Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).     
+nox - nitrogen oxides concentration (parts per 10 million).    
+rm - average number of rooms per dwelling.    
+age - proportion of owner-occupied units built prior to 1940.    
+dis - weighted mean of distances to five Boston employment centres.   
+rad - index of accessibility to radial highways.    
+tax - full-value property-tax rate per \$10,000.   
+ptratio - pupil-teacher ratio by town.    
+black - 1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.    
+lstat - lower status of the population (percent).    
+medv - median value of owner-occupied homes in \$1000s.    
+
+
+The source for the data: 
+
+Harrison, D. and Rubinfeld, D.L. (1978) Hedonic prices and the demand for clean air. J. Environ. Economics and Management 5, 81–102.
+
+Belsley D.A., Kuh, E. and Welsch, R.E. (1980) Regression Diagnostics. Identifying Influential Data and Sources of Collinearity. New York: Wiley.
+
+
+## Graphical overview of the distributions of the variables and relationships between the variables
+```{r,fig.width = 13,fig.height= 11}
+p <- ggpairs(Boston, mapping = aes(alpha = 0.3), lower = list(combo = wrap("facethist", bins = 20)))
+p
+```
+
+
+From the data we can interpret  visually that the data has distributions:  
+crim - exponential distribution    
+zn - exponential distribution  
+indus - bi-modal distribution    
+chas - exponential distribution       
+nox -triangluar distribution
+rm - normal distribution     
+age - exponential distribution  
+dis - triangular distribution  
+rad - bi-modal distribution    
+tax -  bi-modal distribution  
+ptratio - triangular distribution    
+black - exponential distribution  
+lstat - triangular distribution    
+medv -  almost normal distribution or triangular distribution  
+
+The relationships between the variables (Corr = Correlations) can be interpreted from the matrix plot.
+
+## Standardizing the dataset and create categorial variable of the crime rate
+The data contains only numerical values, so the scale() function can be used for standardization.
+In the scale() function subtracts the column means from the corresponding columns and divides the difference with standard deviation.
+```{r}
+boston_scaled <- scale(Boston) #Scale the data
+summary(boston_scaled) #Print out the summaries of the variables
+
+boston_scaled<-as.data.frame(boston_scaled) #change the  object to data frame
+```
+The most notable change was that the function scale() had was that the mean of every variable is now 0. The variable values also span from negative to positive depending on the initial values.
+
+Now we create a categorial value "crime" and replace the original "crime" variable with the new categorial one
+```{r}
+# create a quantile vector of crim and print it
+bins <- quantile(boston_scaled$crim)
+bins
+
+# create a categorical variable 'crime'
+crime <- cut(boston_scaled$crim, breaks = bins, include.lowest = TRUE, labels = c("low","med_low","med_high","high"))
+
+# remove original "crim" from the dataset
+boston_scaled <- dplyr::select(boston_scaled, -crim)
+
+# add the new categorical value to scaled data
+boston_scaled <- data.frame(boston_scaled, crime)
+
+
+# number of rows in the Boston dataset 
+n <- nrow(Boston)
+
+# choose randomly 80% of the rows
+ind <- sample(n,  size = n * 0.8)
+
+# create train set
+train <- boston_scaled[ind,]
+
+# create test set with the rest of the rows
+test <- boston_scaled[-ind,]
+
+# save the correct classes from test data
+correct_classes <- test$crime
+
+
+
+```
+ 
+
+## Fit the linear discriminant analysis on the train set
+Fit the linear discriminant analysis on the _train_ set using the categorical _crime_ rate "crime" variable as the target variable and all the other variables in the dataset as predictor variables. Then draw the plot
+```{r}
+
+# linear discriminant analysis on the train set using the categorial variable "crime"
+lda.fit <- lda(crime ~., data = train)
+
+
+#Print out the lda-fit object
+lda.fit
+
+# the function for lda biplot arrows
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+# target classes as numeric
+classes <- as.numeric(train$crim)
+
+
+# Finally, plot the lda results
+plot(lda.fit, dimen = 2, col = classes, pch = classes)
+lda.arrows(lda.fit, myscale = 1.5)
+
+```
+  
+## Predict the classes with the LDA model on the test data
+
+```{r}
+
+test <- dplyr::select(test, -crime) #remove the categorical crime variable from the test dataset.
+
+
+lda.pred <- predict(lda.fit, newdata = test) # predict classes with test data 
+
+
+# cross tabulate the results with the crime categories from the test set i.e "correct_classes
+table(correct = correct_classes, predicted = lda.pred$class)
+```
+
+The cross tabulation revealed that the class predictor predicted accurately the high-classes 22/22, med_high was predicted 15/25, med_low 19/34 and low 12/21. The classifier predicted high quantile most accurately. The same thing can be observed from the plot above. Where the high class has least deviation.  
+
+
+## Calculate distances and conducting k-means clustering   
+
+First the data is re-loaded and standardized. 
+```{r}
+#Re-load the data 
+data('Boston')
+boston_scaled <- scale(Boston) #Scale/standradize the data again
+```
+
+Then the euclidean and manhattan distances are calculated:
+```{r}
+# euclidean distance matrix
+dist_eu <- dist(boston_scaled)
+summary(dist_eu) #Look at the summary of the euclidean distances
+
+# manhattan distance matrix
+
+dist_man <- dist(boston_scaled,method = "manhattan")
+
+summary(dist_man) #Look at the summary of Manhattan distances
+
+```
+
+
+Now run the K-means algorithm on the dataset
+
+```{r}
+#Run k-means algorithm on the dataset
+km <-kmeans(boston_scaled, centers = 3)
+pairs(Boston[6:10], col = km$cluster)
+
+```
+
+Now let's investigate what is the optimal number of clusters and run the k-means algorithm again and then visualize the result.  
+
+When one plots the number of clusters and the total WCSS, the optimal number of clusters is when the total WCSS drops radically.
+```{r}
+#K-means might produce different results every time, because it randomly assigns the initial cluster centers. The function set.seed() can be used to deal with that.
+set.seed(123)
+# determine the number of clusters
+k_max <- 10
+
+# calculate the total within sum of squares
+twcss <- sapply(1:k_max, function(k){kmeans(boston_scaled, k)$tot.withinss})
+
+# visualize the results
+qplot(x = 1:k_max, y = twcss, geom = 'line')
+```
+
+In the figure above we can see that WCSS drops radically at 2, thus the optimal number of clusters is 2. Now let's plot the figure to visualize the results
+```{r,fig.width = 15,fig.height= 13}
+# k-means clustering
+km <-kmeans(boston_scaled, centers = 2)
+
+# plot the Boston dataset with clusters
+pairs(boston_scaled, col = km$cluster)
+
+
+```
+
+The clustering seems to be working ok.
