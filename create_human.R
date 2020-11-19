@@ -57,6 +57,8 @@ colnames(gii)[8] <- "edu2m"
 colnames(gii)[9] <- "labf"
 colnames(gii)[10] <- "labm"
 
+#Mutate the "gii" dataset by adding two new columns (variables)
+#secondary education ratio = "edu2ratio" and labour ratio = "labratio"
 
 gii <- mutate(gii, edu2ratio = edu2f/edu2m)
 gii <- mutate(gii, labratio = labf/labm)
