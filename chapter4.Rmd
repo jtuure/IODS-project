@@ -1,5 +1,7 @@
 # Exercise 4. Clustering and classification
 
+I did not really take enough time for this weeks exercises and to really dig into the interpretation of LDA and k-means clustering analyses. One should not start doing the exercises the night before..  
+
 ```{r}
 #Import libraries
 library(dplyr) 
@@ -230,4 +232,4 @@ pairs(boston_scaled, col = km$cluster)
 
 ```
 
-The clustering seems to be working ok.
+Graphically interpreted the clustering seems reasonable.
