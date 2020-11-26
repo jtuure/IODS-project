@@ -1,0 +1,146 @@
+# Exercise 5. Dimensionality reduction techniques
+
+```{r}
+#Import libraries
+library(dplyr) 
+library(ggplot2) 
+library(GGally)
+library(tidyr)
+library(FactoMineR)
+
+```
+
+
+
+## Step 1. Loading the dataset and briefly exploring the dataste
+
+To ensure accessibility the data available online is used for the exercise 
+```{r}
+
+#Download data, with a comma separator between columns:
+human <- read.table("http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/human2.txt", 
+                 sep = ",",
+                 header = TRUE
+                 )
+```
+The 'human' dataset originates from the United Nations Development Programme. See their data page(http://hdr.undp.org/en/content/human-development-index-hdi) for more information. 
+
+The data combines several indicators rom most countries of the world.
+
+The data considered in this exercise has been reduced from the original dataset and contains the following variables:   
+Edu2.FM = The ratio of Female and Male populations with secondary education   
+Labo.FM = The ratio of labour force participation of females and males   
+Edu.Exp = Expected years of schooling   
+Life.Exp =  Life expectancy at birth  
+GNI = Gross National Income  
+Mat.Mor = Maternal mortality ratio  
+Ado.Birth = Adolescent birth rate  
+Parli.F = Percetange of female representatives in parliament  
+Country = Country  
+
+
+
+A graphical overview of the human dataset and a summary of the variables: 
+
+```{r,fig.width = 13,fig.height= 11}
+p <- ggpairs(human)
+p
+
+summary(human)
+```
+
+Some comments on the variables, their distributions and relationships:
+The distributions of the expected education Edu.Exp and Edu2.FM seems normal, at least visually.
+The other distributions of the variables are more or less skewed. GNI, Ado.Birth and Mat.Mor strongly skewed to right.Parli.F moderately skewed to the righ. Labo.FM, Edu.Exp and Life. Exp are skewed to the left.
+
+Strong relationships (correlations) can be observed between Life.Exp and Mat.Mor (R = -0.86) as well as Edu.Exp (R = 0.789). A clear relationship exists between Mat.Mor and Ado.Birth (R = 0.759) and also  between Mat.Mor and Edu.Exp (R = -0.736). A significant relationship can be found between Edu.Exp and Ado.Birth (R = 0.704)
+
+## Steps 2 -4 Perform principal component analysis (PCA) 
+
+A PCA is performed on the not standardized dataset
+```{r}
+pca_human <- prcomp(human)
+```
+
+The summary of PCA reveals the variability (rows) captured by the principal components (columns)
+```{r}
+summary(pca_human)
+```
+
+Next,let's draw a biplot of the two principal components (PC1 coordinate in x-axis, PC2 coordinate in y-axis) and the original variables (represented by the arrows)
+```{r}
+biplot(pca_human, choices = 1:2, cex = c(0.5,0.8), col = c("grey40","deeppink2"))
+
+```
+The arrows represent the variables and the names of the countries are the observations 
+
+
+Now the dataset is standardized and PCA is performed on the standardized dataset.
+Then the summary of the results is printed and the (bi)plot is drawn
+
+```{r}
+human_std <- scale(human)
+pca_human2 <- prcomp(human_std)
+
+summary(pca_human2)
+biplot(pca_human2, choices = 1:2, cex = c(0.5,0.8), col = c("grey40","deeppink2"))
+
+```
+
+Interpretation:
+In the summary of the standardized dataset the values for variations are  more uniform compared to the notstandardized dataset.Before the standradization the large values of standard deviation contributed to PC came from GNI variable (can be seen in the not standardized biplot)  
+
+
+The standardization of the dataset affects the biplot so, that it is easier to grasp. The arrows in the biplot now indicate the relationships between the variables, similarly as interpreted from the graphical overview in the previous section. The smaller the angle between two arrows in the biplot the stronger the positive relationship and the closer to 180 the stronger the negative relationship. 90 degrees would indicate no relationship. 
+
+The variables Labo.FM and Parli.F, displayed by the vertical arrows in the standardized biplot contributes to PC2 (y-axis) while the other variables contribute to PC1 (x-axis).
+
+## Step 5. Multiple Correspondence Analysis on the tea data 
+Load the dataset:
+```{r}
+data("tea")
+```
+
+Briefly explore the data by printing the dimensions and the structure:
+```{r}
+dim(tea)
+str(tea)
+```
+
+
+It proved difficult (and slow) to quickly and reasonably visualize the whole dataset. As it has 36 variables and 300 observations. 
+
+For this exercise the dataset is reduced to 6 variables:
+```{r}
+keep_columns <- c("Tea", "How", "how", "sugar", "where", "lunch") #columns to keep
+```
+
+```{r}
+tea_time <- dplyr::select(tea, one_of(keep_columns)) #new dataset with above columns
+```
+
+Let's briefly inspect the reduced dataset: 
+```{r}
+summary(tea_time)
+str(tea_time)
+```
+
+Now multiple correspondence analysis (MCA) is performed on the data and the summary for it is printed
+```{r}
+mca <- MCA(tea_time, graph = FALSE)
+summary(mca)
+
+```
+
+Finally, the MCA is visualized
+```{r}
+plot(mca, invisible=c("ind"), habillage = "quali")
+
+```
+
+
+From the printed summary one can interpret that the variables "How" and "Where" have strong realtionship with dimension 1, i.e. squared correlations are 0.708 and 0.702 respectively.
+
+
+In the plot the distance between the variable categories indicate their similarity. For example "Earl grey" is similar to "milk", but not at all similar to "green". 
+
