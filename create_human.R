@@ -76,7 +76,7 @@ glimpse(human) #The data should have 195 observations and 19 variables (and it h
 #Save human dataset to the 'data' folder 
 setwd('C:/Users/JT/Documents/IODS/IODS-project/data') #Set the working directory
 
-write.table(alc, file = "alc.txt", append = FALSE, quote = TRUE, sep = ",",
+write.table(human, file = "human.txt", append = FALSE, quote = TRUE, sep = ",",
             eol = "\n", na = "NA", dec = ".", row.names = TRUE,
             col.names = TRUE, qmethod = c("escape", "double"),
             fileEncoding = "")
